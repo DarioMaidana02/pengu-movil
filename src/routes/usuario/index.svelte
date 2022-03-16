@@ -26,9 +26,9 @@
 			pointCoords
 		];
 
-		mapa.getSource('LineString').setData(geojson);
+		mapa.getSource('Ruta').setData(geojson);
 
-		mapa.removeLayer('LineString');
+		mapa.removeLayer('Ruta');
 		mapa.addLayer({
 			id: 'LineString',
 			type: 'line',
@@ -174,26 +174,27 @@
 <!-- MAPA -->
 <div id="mapa" style="height: 500px; width: 100%" />
 
-<div>
-	<p>{puntoDePartida}</p>
-	<p>{puntoDeDestino}</p>
-</div>
-
 <!-- MENU -->
-<div>
-	<ol>
-		<li>
-			<p>
-				Ubica tu punto de partida <span style="color: {colorDePartida}">☻</span>
-			</p>
-		</li>
-		<li>
-			<p>
-				Ubica tu punto de destino <span style="color: {colorDeDestino}">☻</span>
-			</p>
-		</li>
-	</ol>
-</div>
+{#if rutaSeleccionada}
+	<div>
+		<ol>
+			<li>
+				<p>
+					Ubica tu punto de partida <span style="color: {colorDePartida}"
+						>☻</span
+					>
+				</p>
+			</li>
+			<li>
+				<p>
+					Ubica tu punto de destino <span style="color: {colorDeDestino}"
+						>☻</span
+					>
+				</p>
+			</li>
+		</ol>
+	</div>
+{/if}
 
 <!-- pop-up to confirm the selected route -->
 {#if seleccionandoRuta}

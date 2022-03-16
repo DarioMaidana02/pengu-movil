@@ -8,7 +8,7 @@ import {
 	addDoc,
 	deleteDoc,
 	GeoPoint,
-	getDoc,
+	setDoc,
 	doc,
 	query,
 	where,
@@ -51,10 +51,10 @@ export async function getRoutes(): Promise<Ruta[]> {
 		return {
 			id: doc.id,
 			idConductor: doc.data().idConductor,
-			puntos: doc.data().points.map((point) => {
-				return [point._long, point._lat];
+			puntos: doc.data().puntos.map((punto) => {
+				return [punto._lat, punto._long];
 			}),
-			horaDeSalida: new Date(doc.data().horaDeSalida),
+			horaDeSalida: doc.data().horaDeSalida,
 
 		};
 	});
@@ -63,8 +63,8 @@ export async function getRoutes(): Promise<Ruta[]> {
 
 export async function addRoute(idConductor, puntos, horaDeSalida): Promise<Ruta> {
 	const coleccionDeRutas = collection(db, 'routes');
-	const geoPuntos = puntos.map((point) => {
-		return new GeoPoint(point[0], point[1]);
+	const geoPuntos = puntos.map((punto) => {
+		return new GeoPoint(punto[0], punto[1]);
 	});
 	const referenciaDeRuta = await addDoc(coleccionDeRutas, { idConductor, puntos: geoPuntos, horaDeSalida });
 	return {
@@ -86,18 +86,22 @@ export async function getRoute(idConductor: string): Promise<Ruta> {
 		return {
 			id: querySnapshot.docs[0].id,
 			puntos: route.puntos.map((punto) => {
-				return [punto._long, punto._lat];
+				return [punto._lat, punto._long];
 			}),
 			idConductor: querySnapshot.docs[0].data().idConductor,
-			horaDeSalida: new Date(querySnapshot.docs[0].data().horaDeSalida),
+			horaDeSalida: querySnapshot.docs[0].data().horaDeSalida,
 		};
 	} else {
 		return null;
 	}
 }
 
+export async function updateRoute(idRuta, puntos, horaDeSalida) {
+	const referenciaDeRuta = doc(db, 'routes', idRuta)
+	await setDoc(referenciaDeRuta, { puntos, horaDeSalida }, { merge: true });
+}
+
 export async function deleteRoute(idRuta: string) {
 	const referenciaDeRuta = doc(db, 'routes', idRuta);
 	await deleteDoc(referenciaDeRuta);
-	alert('Ruta eliminada');
 }

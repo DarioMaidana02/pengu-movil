@@ -1,9 +1,13 @@
 <script lang="ts">
 	import { onMount } from 'svelte'; //importando para poder montar al ejecutar
 	import mapboxgl, { Marker, Map, Geojson } from 'mapbox-gl'; //importando mapboxgl
-	import { addRoute, getRoute, deleteRoute } from '$lib/plugins/firebase';
-	import { GeoPoint } from 'firebase/firestore/lite';
-	import { agregarMarcador, removerMarcador } from '$lib/helpers/mapbox';
+	import {
+		addRoute,
+		getRoute,
+		deleteRoute,
+		updateRoute
+	} from '$lib/plugins/firebase';
+	import { agregarMarcador } from '$lib/helpers/mapbox';
 	import type { Ruta } from '$lib/types/general';
 
 	mapboxgl.accessToken =
@@ -11,16 +15,19 @@
 	let mapa;
 	let geojson: Geojson;
 	let ruta: Ruta;
-	let puntos = [];
+	let puntos: [number, number][] = [];
 	let puntoDePartida: [number, number] = null;
 	let puntoDeDestino: [number, number] = null;
 	let marcadorDePartida: Marker = null;
 	let marcadorDeDestino: Marker = null;
-	let rutaEstaSiendoCreada = false;
+
 	let colorDePartida: string = '#0AF';
 	let colorDeDestino: string = '#0FA';
 	let horaDeSalida = '00:00';
 	const idConductor = 'jnjVuVWrDKDhoWURj5CE'; // queda estatico por ahora
+
+	let rutaSeEstaCreando: boolean = false;
+	let rutaSeEstaEditando: boolean = false;
 
 	function agregarUnPuntoALaRuta(coordenadas) {
 		puntos.push(coordenadas);
@@ -29,8 +36,6 @@
 	function repintarLinea() {
 		// Solo pinta las rutas
 		geojson.features[0].geometry.coordinates = puntos;
-
-		console.log(geojson);
 
 		mapa.getSource('Ruta').setData(geojson);
 
@@ -58,10 +63,13 @@
 			mapa,
 			puntoDePartida,
 			colorDePartida,
-			true,
+			false,
 			(evento) => {
 				const { lng, lat } = evento.target.getLngLat();
+				console.log(lng, lat);
 				puntoDePartida = [lng, lat];
+				puntos[0] = puntoDePartida;
+				repintarLinea();
 			}
 		);
 
@@ -70,25 +78,66 @@
 			mapa,
 			puntoDeDestino,
 			colorDeDestino,
-			true,
+			false,
 			(evento) => {
 				const { lng, lat } = evento.target.getLngLat();
 				puntoDeDestino = [lng, lat];
+				puntos[puntos.length - 1] = puntoDeDestino;
+				repintarLinea();
 			}
 		);
+	}
+
+	function crearRuta() {
+		rutaSeEstaCreando = true;
 	}
 
 	async function guardarRuta() {
 		try {
 			ruta = await addRoute(idConductor, puntos, horaDeSalida);
+			alert('Ruta creada');
 		} catch (error) {
 			console.log(error);
-			alert('Error al guardar la ruta, intente mas tarde');
+			alert('Error al guardar la ruta, intente más tarde.');
+		} finally {
+			rutaSeEstaCreando = false;
 		}
 	}
 
-	function borrarRuta() {
-		deleteRoute(ruta.id);
+	async function borrarRuta() {
+		try {
+			await deleteRoute(ruta.id);
+			alert('Ruta eliminada');
+		} catch (error) {
+			console.log(error);
+			alert('Error al eliminar la ruta, intente más tarde.');
+		}
+	}
+
+	async function guardarCambiosEnRuta() {
+		try {
+			await updateRoute(ruta.id, puntos, horaDeSalida);
+			alert('Ruta actualizada');
+		} catch (error) {
+			console.log(error);
+			alert('Error al guardar los cambios, intente más tarde.');
+		} finally {
+			rutaSeEstaEditando = false;
+		}
+	}
+
+	function editarRuta() {
+		rutaSeEstaEditando = true;
+		horaDeSalida = ruta.horaDeSalida;
+	}
+
+	async function guardarCambios() {
+		if (rutaSeEstaEditando) {
+			guardarCambiosEnRuta();
+		} else {
+			guardarRuta();
+		}
+		window.history.go(0);
 	}
 
 	onMount(async () => {
@@ -99,8 +148,6 @@
 				position.coords.longitude,
 				position.coords.latitude
 			];
-
-			console.log(longitud, latitud);
 
 			const puntosDeLaRuta = ruta?.puntos;
 
@@ -131,6 +178,8 @@
 				mapa.setCenter(puntosDeLaRuta[0]);
 
 				cargarPuntosIniciales(ruta);
+
+				horaDeSalida = ruta.horaDeSalida;
 			} else {
 				marcadorDePartida = agregarMarcador(
 					mapa,
@@ -167,6 +216,8 @@
 			});
 
 			mapa.on('click', (puntero) => {
+				if (!rutaSeEstaCreando) return;
+
 				const { lng, lat } = puntero.lngLat;
 
 				agregarUnPuntoALaRuta([lng, lat]);
@@ -215,11 +266,13 @@
 	</ol>
 </div>
 
-<input type="time" bind:value={horaDeSalida} />
-
-<!-- Si hay una ruta guardada -->
-{#if ruta}
-	<button on:click={borrarRuta}>Borrar ruta</button>
+{#if ruta?.id && !rutaSeEstaEditando}
+	<button on:click={borrarRuta}>Cambiar la ruta</button>
+	<button on:click={editarRuta}>Cambiar la hora de salida</button>
+{:else if !rutaSeEstaEditando && !rutaSeEstaCreando && !ruta?.id}
+	<button on:click={crearRuta}>Crear una ruta</button>
 {:else}
-	<button on:click={guardarRuta}>Guardar ruta</button>
+	<button on:click={guardarCambios}
+		>Guardar {rutaSeEstaEditando ? 'los cambios' : 'la ruta'}</button
+	>
 {/if}
