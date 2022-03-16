@@ -258,7 +258,7 @@
 </script>
 
 <svelte:head>
-	<title>conductor</title>
+	<title>usuario</title>
 </svelte:head>
 
 <div id="mapa" style="height: 60vh; width: 100%" />
@@ -292,3 +292,10 @@
 		<button on:click={guardarRuta}>Guardar la ruta</button>
 	{/if}
 {/if}
+
+<style>
+	body {
+		font-family: sans-serif;
+		background-color: #282748;
+	}
+</style>

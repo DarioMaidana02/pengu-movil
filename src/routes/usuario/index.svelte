@@ -231,4 +231,7 @@
 		box-shadow: 0px 0px 10px #000;
 		z-index: 1;
 	}
+	body {
+		background-color: #f6c042;
+	}
 </style>
