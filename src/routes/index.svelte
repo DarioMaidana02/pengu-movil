@@ -1,22 +1,14 @@
 <svelte:head>
-	<title>Travel share</title>
+	<title>Pengu movil</title>
 </svelte:head>
-<section>
-	<h1>Travel Share</h1>
-	<p>
-		Es una plataforma que conecta a conductores y pasajeros que comparten origenes, destinos y
-		paradas comunes en la ruta
-	</p>
-	}
-</section>
 <button>
-	<a href="/conductor">El conductor marca su ruta</a>
+	<a href="/conductor">Entrar como conductor</a>
 </button>
 <br />
 <br />
 <br />
 <button>
-	<a href="/usuario">El usuario puede ver las rutas disponibles</a>
+	<a href="/usuario">Entrar como usuario</a>
 </button>
 <br />
 <br />

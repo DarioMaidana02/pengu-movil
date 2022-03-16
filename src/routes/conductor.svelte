@@ -116,9 +116,18 @@
 </script>
 
 <svelte:head>
-	<title>conductor</title>
+	<title>usuario</title>
 </svelte:head>
-
+<body>
+	<style>
+		body {
+			font-family:sans-serif;
+			background-color: #282748;
+		}
+		
+		}
+	</style>
+</body>
 <div id="mapa" style="height: 700px; width: 700px" />
 
 <!-- <button on:click={saveChanges}>Guardar cambios</button>

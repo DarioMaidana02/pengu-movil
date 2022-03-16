@@ -137,5 +137,11 @@
 <svelte:head>
 	<title>usuario</title>
 </svelte:head>
-
+<body>
+	<style>
+		body {
+			background-color: #f6c042;
+		}
+	</style>
+</body>
 <div id="map" style="height: 700px; width: 700px" />
