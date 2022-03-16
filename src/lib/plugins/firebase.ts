@@ -43,10 +43,14 @@ const app = initializeApp(firebaseConfig);
 
 const db = getFirestore(app);
 
-// Get a list of routes from your database
+// Obtener lista de rutas
 export async function getRoutes(): Promise<Ruta[]> {
+	// Obtenemos la coleccion de rutas
 	const coleccionDeRutas = collection(db, 'routes');
+	// Traemos copias temporales de los datos de la bd
 	const snapshotDeRutas = await getDocs(coleccionDeRutas);
+
+	// Se formatean los datos con map para que sean más fáciles de manipular
 	const rutas: Ruta[] = snapshotDeRutas.docs.map(doc => {
 		return {
 			id: doc.id,
