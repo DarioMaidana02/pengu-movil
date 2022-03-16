@@ -20,10 +20,10 @@
 	let puntoDeDestino: [number, number] = null;
 	let marcadorDePartida: Marker = null;
 	let marcadorDeDestino: Marker = null;
-
+	let ubicacionDelUsuario: [number, number];
 	let colorDePartida: string = '#0AF';
 	let colorDeDestino: string = '#0FA';
-	let horaDeSalida = '00:00';
+	let horaDeSalida = `${new Date().getHours()}:${new Date().getMinutes()}`;
 	const idConductor = 'jnjVuVWrDKDhoWURj5CE'; // queda estatico por ahora
 
 	let rutaSeEstaCreando: boolean = false;
@@ -33,7 +33,7 @@
 		puntos.push(coordenadas);
 	} // se agrega un punto a la ruta
 
-	function repintarLinea() {
+	function repintarLinea(puntos) {
 		// Solo pinta las rutas
 		geojson.features[0].geometry.coordinates = puntos;
 
@@ -69,7 +69,7 @@
 				console.log(lng, lat);
 				puntoDePartida = [lng, lat];
 				puntos[0] = puntoDePartida;
-				repintarLinea();
+				repintarLinea(puntos);
 			}
 		);
 
@@ -83,16 +83,23 @@
 				const { lng, lat } = evento.target.getLngLat();
 				puntoDeDestino = [lng, lat];
 				puntos[puntos.length - 1] = puntoDeDestino;
-				repintarLinea();
+				repintarLinea(puntos);
 			}
 		);
 	}
 
 	function crearRuta() {
 		rutaSeEstaCreando = true;
+		setTimeout(() => {
+			horaDeSalida = `${new Date().getHours()}:${new Date().getMinutes()}`;
+		}, 100);
 	}
 
 	async function guardarRuta() {
+		if (puntos.length < 2) {
+			alert('La ruta debe tener al menos dos puntos');
+			return;
+		}
 		try {
 			ruta = await addRoute(idConductor, puntos, horaDeSalida);
 			alert('Ruta creada');
@@ -107,7 +114,19 @@
 	async function borrarRuta() {
 		try {
 			await deleteRoute(ruta.id);
-			alert('Ruta eliminada');
+			marcadorDeDestino.remove();
+			marcadorDePartida.remove();
+			puntos = [ubicacionDelUsuario];
+			mapa.setCenter(ubicacionDelUsuario);
+			repintarLinea([ubicacionDelUsuario]);
+			marcadorDePartida = agregarMarcador(
+				mapa,
+				ubicacionDelUsuario,
+				'#0AF',
+				true
+			);
+			alert('Agrega una nueva ruta');
+			rutaSeEstaCreando = true;
 		} catch (error) {
 			console.log(error);
 			alert('Error al eliminar la ruta, intente más tarde.');
@@ -126,18 +145,9 @@
 		}
 	}
 
-	function editarRuta() {
-		rutaSeEstaEditando = true;
+	function cambiarHora() {
 		horaDeSalida = ruta.horaDeSalida;
-	}
-
-	async function guardarCambios() {
-		if (rutaSeEstaEditando) {
-			guardarCambiosEnRuta();
-		} else {
-			guardarRuta();
-		}
-		window.history.go(0);
+		rutaSeEstaEditando = true;
 	}
 
 	onMount(async () => {
@@ -148,6 +158,8 @@
 				position.coords.longitude,
 				position.coords.latitude
 			];
+
+			ubicacionDelUsuario = [longitud, latitud];
 
 			const puntosDeLaRuta = ruta?.puntos;
 
@@ -190,7 +202,7 @@
 						const { lng, lat } = evento.target.getLngLat();
 						puntoDePartida = [lng, lat];
 						puntos[0] = [lng, lat];
-						repintarLinea();
+						repintarLinea(puntos);
 					}
 				);
 			}
@@ -233,15 +245,16 @@
 						const { lng, lat } = evento.target.getLngLat();
 						puntoDeDestino = [lng, lat];
 						puntos[puntos.length - 1] = puntoDeDestino;
-						repintarLinea();
+						repintarLinea(puntos);
 					}
 				);
 				puntoDeDestino = [lng, lat];
 
-				repintarLinea();
+				repintarLinea(puntos);
 			});
 		});
 	});
+	$: rutaSeEstaCreando = rutaSeEstaCreando;
 </script>
 
 <svelte:head>
@@ -266,13 +279,16 @@
 	</ol>
 </div>
 
-{#if ruta?.id && !rutaSeEstaEditando}
+{#if ruta?.id && !rutaSeEstaEditando && !rutaSeEstaCreando}
 	<button on:click={borrarRuta}>Cambiar la ruta</button>
-	<button on:click={editarRuta}>Cambiar la hora de salida</button>
+	<button on:click={cambiarHora}>Cambiar la hora de salida</button>
 {:else if !rutaSeEstaEditando && !rutaSeEstaCreando && !ruta?.id}
 	<button on:click={crearRuta}>Crear una ruta</button>
 {:else}
-	<button on:click={guardarCambios}
-		>Guardar {rutaSeEstaEditando ? 'los cambios' : 'la ruta'}</button
-	>
+	<input type="time" bind:value={horaDeSalida} />
+	{#if rutaSeEstaEditando}
+		<button on:click={guardarCambiosEnRuta}> >Guardar los cambios</button>
+	{:else}
+		<button on:click={guardarRuta}>Guardar la ruta</button>
+	{/if}
 {/if}

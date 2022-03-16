@@ -98,7 +98,8 @@ export async function getRoute(idConductor: string): Promise<Ruta> {
 
 export async function updateRoute(idRuta, puntos, horaDeSalida) {
 	const referenciaDeRuta = doc(db, 'routes', idRuta)
-	await setDoc(referenciaDeRuta, { puntos, horaDeSalida }, { merge: true });
+	const geoPuntos = puntos.map((punto) => new GeoPoint(punto[0], punto[1]));
+	await setDoc(referenciaDeRuta, { puntos: geoPuntos, horaDeSalida }, { merge: true });
 }
 
 export async function deleteRoute(idRuta: string) {

@@ -104,8 +104,10 @@
 		);
 	}
 
-	onMount(() => {
-		navigator.geolocation.getCurrentPosition(async (position) => {
+	onMount(async () => {
+		rutas = await getRoutes();
+		console.log(rutas);
+		navigator.geolocation.getCurrentPosition((position) => {
 			const { longitude, latitude } = position.coords;
 
 			mapa = new mapboxgl.Map({
@@ -114,8 +116,6 @@
 				center: [longitude, latitude], // starting position [lng, lat]
 				zoom: 15 // starting zoom
 			});
-
-			rutas = await getRoutes();
 
 			mapa.on('load', () => {
 				rutas.forEach((route, index) => {
@@ -127,7 +127,7 @@
 								geometry: {
 									type: 'LineString',
 									properties: {},
-									coordinates: route || []
+									coordinates: route.puntos || []
 								}
 							}
 						]
@@ -148,7 +148,7 @@
 						},
 						paint: {
 							'line-color': '#BF93E4',
-							'line-width': 5
+							'line-width': 8
 						}
 					});
 
@@ -157,9 +157,8 @@
 							if (rutaSeleccionada) {
 								mapa.removeLayer(`SelectedRoute`);
 							}
-							seleccionarRuta(index, mapa);
+							// abrirPopupDeConfirmacion()
 						}
-						console.log(index);
 					});
 				});
 			});
