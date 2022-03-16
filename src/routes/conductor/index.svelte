@@ -24,7 +24,7 @@
 	let colorDePartida: string = '#0AF';
 	let colorDeDestino: string = '#0FA';
 	let horaDeSalida = `${new Date().getHours()}:${new Date().getMinutes()}`;
-	const idConductor = 'ShN7ns7HOj6Ptp1KqF3g'; // queda estatico por ahora
+	const idConductor = 'jnjVuVWrDKDhoWURj5CE'; // queda estatico por ahora
 
 	let rutaSeEstaCreando: boolean = false;
 	let rutaSeEstaEditando: boolean = false;

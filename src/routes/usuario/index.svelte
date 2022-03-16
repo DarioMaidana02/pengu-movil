@@ -11,10 +11,6 @@
 	let geojson: Geojson;
 	let rutas: Ruta[] = [];
 	let rutaSeleccionada: Ruta = null;
-	let puntoDePartida: [number, number] = null;
-	let puntoDeDestino: [number, number] = null;
-	let marcadorDePartida: Marker = null;
-	let marcadorDeDestino: Marker = null;
 	let colorDePartida: string = '#0AF';
 	let colorDeDestino: string = '#0FA';
 	let seleccionandoRuta: boolean = false;
@@ -67,43 +63,12 @@
 		});
 	}
 
-	function functionFijarRutaSeleccionada(ruta) {
-		cargarPuntosIniciales(ruta);
-	}
-
-	function quitarRutasSeleccionadas() {
-		rutaSeleccionada = null;
-		puntoDePartida = null;
-		puntoDeDestino = null;
-		removerMarcador(marcadorDePartida);
-		removerMarcador(marcadorDeDestino);
-		popUpEstaAbierto = false;
-	}
-
 	function cargarPuntosIniciales(ruta) {
-		puntoDePartida = ruta.points[0];
-		marcadorDePartida = agregarMarcador(
-			mapa,
-			puntoDePartida,
-			colorDePartida,
-			true,
-			(evento) => {
-				const { lng, lat } = evento.target.getLngLat();
-				puntoDePartida = [lng, lat];
-			}
-		);
+		const puntoDePartida = ruta.puntos[0];
+		agregarMarcador(mapa, puntoDePartida, colorDePartida);
 
-		puntoDeDestino = ruta.points[ruta.points.length - 1];
-		marcadorDeDestino = agregarMarcador(
-			mapa,
-			puntoDeDestino,
-			colorDeDestino,
-			true,
-			(evento) => {
-				const { lng, lat } = evento.target.getLngLat();
-				puntoDeDestino = [lng, lat];
-			}
-		);
+		const puntoDeDestino = ruta.puntos[ruta.puntos.length - 1];
+		agregarMarcador(mapa, puntoDeDestino, colorDeDestino);
 	}
 
 	onMount(async () => {
@@ -120,7 +85,7 @@
 			});
 
 			mapa.on('load', () => {
-				rutas.forEach((route, index) => {
+				rutas.forEach((ruta, index) => {
 					geojson = {
 						type: 'FeatureCollection',
 						features: [
@@ -129,7 +94,7 @@
 								geometry: {
 									type: 'LineString',
 									properties: {},
-									coordinates: route.puntos || []
+									coordinates: ruta.puntos || []
 								}
 							}
 						]
@@ -153,6 +118,8 @@
 							'line-width': 8
 						}
 					});
+
+					cargarPuntosIniciales(ruta);
 
 					mapa.on('click', `LineString${index}`, (e) => {
 						if (rutaSeleccionada !== rutas[index]) {
@@ -196,8 +163,20 @@
 					>
 				</p>
 			</li>
+			<li>
+				<p>
+					Ruta seleccionada <span style="color: #AA0">☻</span>
+				</p>
+			</li>
 		</ol>
 	</div>
+
+	<button>Confirmar Ruta</button>
+
+	<!-- <div>
+		<h3>Información de la ruta</h3>
+		informaci
+	</div> -->
 {/if}
 
 <!-- pop-up to confirm the selected route -->
