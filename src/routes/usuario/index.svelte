@@ -18,6 +18,7 @@
 	let colorDePartida: string = '#0AF';
 	let colorDeDestino: string = '#0FA';
 	let seleccionandoRuta: boolean = false;
+	let popUpEstaAbierto: boolean = false;
 
 	//creamos la funcion linea para empezar a dibujar
 	function addLine(pointCoords, mapa) {
@@ -76,6 +77,7 @@
 		puntoDeDestino = null;
 		removerMarcador(marcadorDePartida);
 		removerMarcador(marcadorDeDestino);
+		popUpEstaAbierto = false;
 	}
 
 	function cargarPuntosIniciales(ruta) {
@@ -155,9 +157,12 @@
 					mapa.on('click', `LineString${index}`, (e) => {
 						if (rutaSeleccionada !== rutas[index]) {
 							if (rutaSeleccionada) {
-								mapa.removeLayer(`SelectedRoute`);
+								mapa.removeLayer(`RutaSeleccionada`);
 							}
-							// abrirPopupDeConfirmacion()
+							setTimeout(() => {
+								seleccionarRuta(index, mapa);
+								popUpEstaAbierto = true;
+							}, 100);
 						}
 					});
 				});
@@ -174,7 +179,7 @@
 <div id="mapa" style="height: 500px; width: 100%" />
 
 <!-- MENU -->
-{#if rutaSeleccionada}
+{#if popUpEstaAbierto}
 	<div>
 		<ol>
 			<li>
@@ -197,7 +202,7 @@
 
 <!-- pop-up to confirm the selected route -->
 {#if seleccionandoRuta}
-	<div id="popup" class="popup">
+	<!-- <div id="popup" class="popup">
 		<div class="popup-content">
 			<p>¿Estás seguro que quieres seleccionar esta ruta?</p>
 			<button
@@ -211,7 +216,7 @@
 				<p>No</p>
 			</button>
 		</div>
-	</div>
+	</div> -->
 {/if}
 
 <style>
