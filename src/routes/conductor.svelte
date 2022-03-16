@@ -1,41 +1,34 @@
 <script lang="ts">
 	import { onMount } from 'svelte'; //importando para poder montar al ejecutar
 	import mapboxgl from 'mapbox-gl'; //importando mapboxgl
+	import { addRoute, getRoute } from '$lib/plugins/firebase';
+	import { GeoPoint } from 'firebase/firestore/lite';
 
 	mapboxgl.accessToken =
 		'pk.eyJ1IjoiYWxleGNhY2VyZXMxMjMiLCJhIjoiY2wwcXpsOW1jMmY1NzNmb2FwbnlybDZ5MCJ9.x-rlp8NGORNNCtNeRsTmLw';
-	let map;
+	let mapa;
 	let geojson;
+	let ruta;
+	let rutaEstaSiendoCreada = false;
+	const idConductor = 'jnjVuVWrDKDhoWURj5CE'; // queda estatico por ahora
 
-	function setPoint(pointCoords) {
-		const oldPoints = getPoints() || [];
-		const newPoints = [...oldPoints, pointCoords];
-		const newPointsToString = newPoints.map((point) => point.toString());
-		//el nuevo punto a letras es a nuevo punto del ingresado
-		localStorage.setItem('pointCoords', newPointsToString.join('!'));
-	} //aca se ingresa en el local store directamente la informacion colectada
+	function addPointToRoute(coordenadas) {
+		const geoPoint = new GeoPoint(coordenadas[0], coordenadas[1]);
+		ruta.points.push(geoPoint);
+	} // se agrega un punto a la ruta
 
-	function getPoints() {
-		const points = localStorage
-			.getItem('pointCoords')
-			?.split('!')
-			?.map((point) => point.split(','));
-		if (points) {
-			return points;
-		}
-	}
-	//creamos la funcion linea para empezar a dibujar
-
-	function addLine(pointCoords, map) {
+	function addLine(coordenadas, mapa) {
+		// Solo pinta las rutas
 		geojson.features[0].geometry.coordinates = [
 			...geojson.features[0].geometry.coordinates,
-			pointCoords
+			coordenadas
 		];
 
-		map.getSource('LineString').setData(geojson);
+		mapa.getSource('LineString').setData(geojson);
 
-		map.removeLayer('LineString');
-		map.addLayer({
+		mapa.removeLayer('LineString');
+
+		mapa.addLayer({
 			id: 'LineString',
 			type: 'line',
 			source: 'LineString',
@@ -51,34 +44,31 @@
 		});
 	}
 
-	function addMarker(coords, map) {
-		const marker = new mapboxgl.Marker({
-			draggable: false
-		})
-			.setLngLat(coords)
-			.addTo(map);
+	function agregarMarcador(coordenadas, mapa) {
+		// Solo pinta los marcadores
+		const marker = new mapboxgl.Marker().setLngLat(coordenadas).addTo(mapa);
 	}
 
-	function deleteRoute() {
-		localStorage.removeItem('pointCoords');
-		window.history.go(0);
+	function borrarRuta() {
+		// Elimina nuestra ruta
 	}
 
-	onMount(() => {
-		navigator.geolocation.getCurrentPosition((position) => {
-			const { longitude, latitude } = position.coords;
+	onMount(async () => {
+		// navigator.geolocation.getCurrentPosition(async (position) => {
 
-			map = new mapboxgl.Map({
-				container: 'map', // container ID
-				style: 'mapbox://styles/mapbox/streets-v11', // style URL
-				center: [longitude, latitude], // starting position [lng, lat]
-				zoom: 17 // starting zoom
-			});
+		mapa = new mapboxgl.Map({
+			container: 'mapa', // container ID
+			style: 'mapbox://styles/mapbox/streets-v11', // style URL
+			zoom: 17 // starting zoom
+		});
 
-			const coordinates = getPoints();
-			coordinates?.forEach((point) => {
-				addMarker(point, map);
-			});
+		ruta = await getRoute(idConductor);
+
+		if (ruta) {
+			mapa.setCenter(ruta.points[0]);
+
+			agregarMarcador(ruta.points[0], mapa);
+			agregarMarcador(ruta.points[ruta.points.length - 1], mapa);
 
 			geojson = {
 				type: 'FeatureCollection',
@@ -88,18 +78,18 @@
 						geometry: {
 							type: 'LineString',
 							properties: {},
-							coordinates: coordinates || []
+							coordinates: ruta.points || []
 						}
 					}
 				]
 			};
 
-			map.on('load', () => {
-				map.addSource('LineString', {
+			mapa.on('load', () => {
+				mapa.addSource('LineString', {
 					type: 'geojson',
 					data: geojson
 				});
-				map.addLayer({
+				mapa.addLayer({
 					id: 'LineString',
 					type: 'line',
 					source: 'LineString',
@@ -113,16 +103,15 @@
 					}
 				});
 			});
+		}
 
-			map.on('click', (event) => {
-				const { lng, lat } = event.lngLat;
-				addMarker([lng, lat], map);
-				addLine([lng, lat], map);
-				setPoint([lng, lat]);
-
-				const points = getPoints();
-			});
+		mapa.on('click', (event) => {
+			const { lng, lat } = event.lngLat;
+			agregarMarcador([lng, lat], mapa);
+			addLine([lng, lat], mapa);
+			addPointToRoute([lng, lat]);
 		});
+		// });
 	});
 </script>
 
@@ -130,6 +119,9 @@
 	<title>conductor</title>
 </svelte:head>
 
-<div id="map" style="height: 700px; width: 700px" />
+<div id="mapa" style="height: 700px; width: 700px" />
 
-<button on:click={deleteRoute}>Borrar ruta</button>
+<!-- <button on:click={saveChanges}>Guardar cambios</button>
+<button on:click={cancelChanges}>Cancelar cambios</button> -->
+
+<button on:click={borrarRuta}>Borrar ruta</button>

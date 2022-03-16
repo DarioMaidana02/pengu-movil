@@ -7,7 +7,7 @@
 	let map;
 	let geojson;
 	let routes = []; //estamos creando la lista
-	let selectedRoute = null; //listas de seleccion
+	let selectedRoute = null; //ruta seleccionada
 
 	function setPoint(pointCoords) {
 		const oldPoints = getPoints() || [];
@@ -59,12 +59,12 @@
 			.setLngLat(coords)
 			.addTo(map);
 	}
-	function selectRoute() {
+	function selectRoute(index) {
 		selectedRoute = routes[index];
 		map.addLayer({
-			id: 'LineString'${index},
+			id: `LineString${index}`,
 			type: 'line',
-			source: 'LineString'${index},
+			source: `LineString${index}`,
 			layout: {
 				'line-join': 'round',
 				'line-cap': 'round'
@@ -126,9 +126,9 @@
 				});
 			});
 			map.on('click', 'LineString', () => {
-				//coordenadas geometricas 
+				//coordenadas geometricas
 				console.log('rutita');
-				selectRoute();
+				// selectRoute();
 			});
 		});
 	});
