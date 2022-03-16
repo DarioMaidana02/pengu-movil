@@ -1,3 +1,11 @@
+<script>
+	import { onMount } from 'svelte';
+
+	onMount(() => {
+		alert('Te notificaremos cuando el conductor acepte tu solicitud. 🐧');
+	});
+</script>
+
 <svelte:head>
 	<title>Datos del conductor</title>
 </svelte:head>
