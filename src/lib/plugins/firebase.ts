@@ -10,8 +10,11 @@ import {
 	getDoc,
 	doc,
 	query,
-	where
+	where,
+	QuerySnapshot
 } from 'firebase/firestore/lite';
+
+import type { Ruta } from '$lib/types/general'
 
 // TODO: Add SDKs for Firebase products that you want to use
 
@@ -40,13 +43,18 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 // Get a list of routes from your database
-export async function getRoutes() {
+export async function getRoutes(): Promise<Ruta[]> {
 	const routesCol = collection(db, 'routes');
 	const routeSnapshot = await getDocs(routesCol);
-	const routeList = routeSnapshot.docs.map((doc) => {
+	const routeList: Ruta[] = routeSnapshot.docs.map(doc => {
 		return {
 			id: doc.id,
-			points: doc.data().points
+			id_driver: doc.data().id_driver,
+			points: doc.data().points.map((point) => {
+				return [point._long, point._lat];
+			}),
+			start_time: new Date(doc.data().start_time),
+
 		};
 	});
 	return routeList;
@@ -62,16 +70,22 @@ export async function addRoute(points) {
 }
 
 // Obtener una ruta de la base de datos pasandole el id del conductor
-export async function getRoute(id_driver) {
+export async function getRoute(id_driver: string): Promise<Ruta> {
 	const colRef = collection(db, 'routes');
 	const q = query(colRef, where('id_driver', '==', id_driver));
 	const querySnapshot = await getDocs(q);
 	console.log(querySnapshot.docs);
-	const route = querySnapshot.docs[0].data();
-	return {
-		...route,
-		points: route.points.map((point) => {
-			return [point._long, point._lat];
-		})
-	};
+	if (querySnapshot.docs.length) {
+		const route = querySnapshot.docs[0].data();
+		return {
+			points: route.points.map((point) => {
+				return [point._long, point._lat];
+			}),
+			id: querySnapshot.docs[0].id,
+			id_driver: querySnapshot.docs[0].data().id_driver,
+			start_time: new Date(querySnapshot.docs[0].data().start_time),
+		};
+	} else {
+		return null;
+	}
 }
