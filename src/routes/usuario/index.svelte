@@ -171,12 +171,12 @@
 		</ol>
 	</div>
 
-	<button>Confirmar Ruta</button>
-
-	<!-- <div>
-		<h3>Información de la ruta</h3>
-		informaci
-	</div> -->
+	<button
+		on:click={(e) => {
+			e.preventDefault();
+			window.location.href = '/datos-auto';
+		}}>Confirmar Ruta</button
+	>
 {/if}
 
 <!-- pop-up to confirm the selected route -->
