@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte'; //importando para poder montar al ejecutar
 	import mapboxgl, { Marker, Map, Geojson } from 'mapbox-gl'; //importando mapboxgl
-	import { addRoute, getRoute } from '$lib/plugins/firebase';
+	import { addRoute, getRoute, deleteRoute } from '$lib/plugins/firebase';
 	import { GeoPoint } from 'firebase/firestore/lite';
 	import { agregarMarcador, removerMarcador } from '$lib/helpers/mapbox';
 	import type { Ruta } from '$lib/types/general';
@@ -10,6 +10,7 @@
 		'pk.eyJ1IjoiYWxleGNhY2VyZXMxMjMiLCJhIjoiY2wwcXpsOW1jMmY1NzNmb2FwbnlybDZ5MCJ9.x-rlp8NGORNNCtNeRsTmLw';
 	let mapa;
 	let geojson: Geojson;
+	let ruta: Ruta;
 	let puntos = [];
 	let puntoDePartida: [number, number] = null;
 	let puntoDeDestino: [number, number] = null;
@@ -18,6 +19,7 @@
 	let rutaEstaSiendoCreada = false;
 	let colorDePartida: string = '#0AF';
 	let colorDeDestino: string = '#0FA';
+	let horaDeSalida = '00:00';
 	const idConductor = 'jnjVuVWrDKDhoWURj5CE'; // queda estatico por ahora
 
 	function agregarUnPuntoALaRuta(coordenadas) {
@@ -50,8 +52,8 @@
 		});
 	}
 
-	function cargarPuntosIniciales(ruta) {
-		puntoDePartida = ruta.points[0];
+	function cargarPuntosIniciales(ruta: Ruta) {
+		puntoDePartida = ruta.puntos[0];
 		marcadorDePartida = agregarMarcador(
 			mapa,
 			puntoDePartida,
@@ -63,7 +65,7 @@
 			}
 		);
 
-		puntoDeDestino = ruta.points[ruta.points.length - 1];
+		puntoDeDestino = ruta.puntos[ruta.puntos.length - 1];
 		marcadorDeDestino = agregarMarcador(
 			mapa,
 			puntoDeDestino,
@@ -76,12 +78,21 @@
 		);
 	}
 
+	async function guardarRuta() {
+		try {
+			ruta = await addRoute(idConductor, puntos, horaDeSalida);
+		} catch (error) {
+			console.log(error);
+			alert('Error al guardar la ruta, intente mas tarde');
+		}
+	}
+
 	function borrarRuta() {
-		// Elimina nuestra ruta
+		deleteRoute(ruta.id);
 	}
 
 	onMount(async () => {
-		const ruta = await getRoute(idConductor);
+		ruta = await getRoute(idConductor);
 
 		navigator.geolocation.getCurrentPosition((position) => {
 			const [longitud, latitud] = [
@@ -89,7 +100,9 @@
 				position.coords.latitude
 			];
 
-			const puntosDeLaRuta = ruta?.points;
+			console.log(longitud, latitud);
+
+			const puntosDeLaRuta = ruta?.puntos;
 
 			puntos = puntosDeLaRuta?.length ? puntosDeLaRuta : [[longitud, latitud]];
 
@@ -186,4 +199,27 @@
 
 <div id="mapa" style="height: 60vh; width: 100%" />
 
-<button on:click={borrarRuta}>Borrar ruta</button>
+<!-- MENU -->
+<div>
+	<ol>
+		<li>
+			<p>
+				Ubica tu punto de partida <span style="color: {colorDePartida}">☻</span>
+			</p>
+		</li>
+		<li>
+			<p>
+				Ubica tu punto de destino <span style="color: {colorDeDestino}">☻</span>
+			</p>
+		</li>
+	</ol>
+</div>
+
+<input type="time" bind:value={horaDeSalida} />
+
+<!-- Si hay una ruta guardada -->
+{#if ruta}
+	<button on:click={borrarRuta}>Borrar ruta</button>
+{:else}
+	<button on:click={guardarRuta}>Guardar ruta</button>
+{/if}

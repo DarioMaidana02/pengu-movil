@@ -6,6 +6,7 @@ import {
 	collection,
 	getDocs,
 	addDoc,
+	deleteDoc,
 	GeoPoint,
 	getDoc,
 	doc,
@@ -44,48 +45,59 @@ const db = getFirestore(app);
 
 // Get a list of routes from your database
 export async function getRoutes(): Promise<Ruta[]> {
-	const routesCol = collection(db, 'routes');
-	const routeSnapshot = await getDocs(routesCol);
-	const routeList: Ruta[] = routeSnapshot.docs.map(doc => {
+	const coleccionDeRutas = collection(db, 'routes');
+	const snapshotDeRutas = await getDocs(coleccionDeRutas);
+	const rutas: Ruta[] = snapshotDeRutas.docs.map(doc => {
 		return {
 			id: doc.id,
-			id_driver: doc.data().id_driver,
-			points: doc.data().points.map((point) => {
+			idConductor: doc.data().idConductor,
+			puntos: doc.data().points.map((point) => {
 				return [point._long, point._lat];
 			}),
-			start_time: new Date(doc.data().start_time),
+			horaDeSalida: new Date(doc.data().horaDeSalida),
 
 		};
 	});
-	return routeList;
+	return rutas;
 }
 
-export async function addRoute(points) {
-	const routesCol = collection(db, 'routes');
-	const geoPoints = points.map((point) => {
+export async function addRoute(idConductor, puntos, horaDeSalida): Promise<Ruta> {
+	const coleccionDeRutas = collection(db, 'routes');
+	const geoPuntos = puntos.map((point) => {
 		return new GeoPoint(point[0], point[1]);
 	});
-	const routeRef = await addDoc(routesCol, { points: geoPoints });
-	return routeRef.id;
+	const referenciaDeRuta = await addDoc(coleccionDeRutas, { idConductor, puntos: geoPuntos, horaDeSalida });
+	return {
+		id: referenciaDeRuta.id,
+		idConductor,
+		puntos,
+		horaDeSalida
+	};
 }
 
 // Obtener una ruta de la base de datos pasandole el id del conductor
-export async function getRoute(id_driver: string): Promise<Ruta> {
-	const colRef = collection(db, 'routes');
-	const q = query(colRef, where('id_driver', '==', id_driver));
+export async function getRoute(idConductor: string): Promise<Ruta> {
+	const referenciaDeColeccion = collection(db, 'routes');
+	const q = query(referenciaDeColeccion, where('idConductor', '==', idConductor));
 	const querySnapshot = await getDocs(q);
 	console.log(querySnapshot.docs);
 	if (querySnapshot.docs.length) {
 		const route = querySnapshot.docs[0].data();
 		return {
-			points: route.points.map((point) => {
-				return [point._long, point._lat];
-			}),
 			id: querySnapshot.docs[0].id,
-			id_driver: querySnapshot.docs[0].data().id_driver,
-			start_time: new Date(querySnapshot.docs[0].data().start_time),
+			puntos: route.puntos.map((punto) => {
+				return [punto._long, punto._lat];
+			}),
+			idConductor: querySnapshot.docs[0].data().idConductor,
+			horaDeSalida: new Date(querySnapshot.docs[0].data().horaDeSalida),
 		};
 	} else {
 		return null;
 	}
+}
+
+export async function deleteRoute(idRuta: string) {
+	const referenciaDeRuta = doc(db, 'routes', idRuta);
+	await deleteDoc(referenciaDeRuta);
+	alert('Ruta eliminada');
 }
